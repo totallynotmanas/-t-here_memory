@@ -2,12 +2,30 @@ import React, { useState } from 'react';
 import { StoreProvider } from './lib/store';
 import { Timeline } from './components/Timeline';
 import { UploadModal } from './components/UploadModal';
+import { AddEditModal } from './components/AddEditModal';
+import { ScheduleEvent } from './lib/types';
 import { Plus, Settings, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 
 function AppContent() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<ScheduleEvent | undefined>();
+
+  const handleOpenAdd = () => {
+    setEventToEdit(undefined);
+    setShowAddModal(true);
+  };
+
+  const handleEditEvent = (event: ScheduleEvent) => {
+    setEventToEdit(event);
+    setShowAddModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEventToEdit(undefined);
+  };
 
   return (
     <div className="min-h-screen bg-bg-color text-text-primary pb-24">
@@ -40,12 +58,12 @@ function AppContent() {
 
       {/* Main Timeline */}
       <main className="max-w-md mx-auto w-full relative">
-        <Timeline />
+        <Timeline onEventClick={handleEditEvent} />
       </main>
 
       {/* Floating Action Button */}
       <button 
-        onClick={() => setShowAddModal(true)}
+        onClick={handleOpenAdd}
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary-color text-white shadow-glow flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-30"
         aria-label="Add task"
       >
@@ -54,6 +72,7 @@ function AppContent() {
 
       {/* Modals */}
       {showUploadModal && <UploadModal onClose={() => setShowUploadModal(false)} />}
+      {showAddModal && <AddEditModal onClose={handleCloseModal} eventToEdit={eventToEdit} />}
     </div>
   );
 }
@@ -67,4 +86,5 @@ function App() {
 }
 
 export default App;
+
 

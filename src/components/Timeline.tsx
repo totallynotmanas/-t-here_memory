@@ -14,7 +14,7 @@ const getPixelsFromMidnight = (timeStr: string) => {
   return (hours * 60 + minutes) * MINUTE_HEIGHT;
 };
 
-const ScheduleBlock = ({ event }: { event: ScheduleEvent }) => {
+const ScheduleBlock = ({ event, onClick }: { event: ScheduleEvent, onClick: (e: ScheduleEvent) => void }) => {
   const top = getPixelsFromMidnight(event.startTime) - (TIMELINE_START_HOUR * 60 * MINUTE_HEIGHT);
   const duration = differenceInMinutes(
     parse(event.endTime, 'HH:mm', new Date()),
@@ -24,6 +24,7 @@ const ScheduleBlock = ({ event }: { event: ScheduleEvent }) => {
 
   return (
     <motion.div
+      onClick={() => onClick(event)}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -59,7 +60,7 @@ const ScheduleBlock = ({ event }: { event: ScheduleEvent }) => {
   );
 };
 
-export const Timeline = () => {
+export const Timeline = ({ onEventClick }: { onEventClick: (e: ScheduleEvent) => void }) => {
   const { events } = useStore();
   const [currentTimePixels, setCurrentTimePixels] = useState(0);
 
@@ -120,10 +121,11 @@ export const Timeline = () => {
       <div className="absolute top-0 bottom-0 left-0 right-0 pointer-events-none">
         <div className="relative h-full w-full pointer-events-auto">
           {todaysEvents.map(event => (
-            <ScheduleBlock key={event.id} event={event} />
+            <ScheduleBlock key={event.id} event={event} onClick={onEventClick} />
           ))}
         </div>
       </div>
     </div>
   );
 };
+
