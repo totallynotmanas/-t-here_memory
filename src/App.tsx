@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StoreProvider } from './lib/store';
 import { Timeline } from './components/Timeline';
+import { UploadModal } from './components/UploadModal';
 import { Plus, Settings, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -51,7 +52,8 @@ function AppContent() {
         <Plus size={24} />
       </button>
 
-      {/* Modals will go here later */}
+      {/* Modals */}
+      {showUploadModal && <UploadModal onClose={() => setShowUploadModal(false)} />}
     </div>
   );
 }
@@ -65,3 +67,4 @@ function App() {
 }
 
 export default App;
+
