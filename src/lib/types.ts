@@ -8,7 +8,7 @@ export interface ScheduleEvent {
   color: string;
   dayOfWeek?: DayOfWeek; // For recurring schedule
   date?: string; // YYYY-MM-DD for specific tasks
-  isElective?: boolean;
+  isClass?: boolean;
   courseCode?: string;
   location?: string;
 }

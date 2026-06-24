@@ -2,53 +2,38 @@ import React, { useState } from 'react';
 import { StoreProvider } from './lib/store';
 import { Timeline } from './components/Timeline';
 import { UploadModal } from './components/UploadModal';
-import { AddEditModal } from './components/AddEditModal';
+import { EventEditor } from './components/EventEditor';
+import { MajorEvents } from './components/MajorEvents';
+import { SettingsModal } from './components/SettingsModal';
 import { ScheduleEvent } from './lib/types';
-import { Plus, Settings, Upload } from 'lucide-react';
+import { Plus, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 
 function AppContent() {
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<ScheduleEvent | undefined>();
-
-  const handleOpenAdd = () => {
-    setEventToEdit(undefined);
-    setShowAddModal(true);
-  };
 
   const handleEditEvent = (event: ScheduleEvent) => {
     setEventToEdit(event);
-    setShowAddModal(true);
   };
 
   const handleCloseModal = () => {
-    setShowAddModal(false);
     setEventToEdit(undefined);
   };
 
   return (
-    <div className="min-h-screen bg-bg-color text-text-primary pb-24">
+    <div className="app-container">
       {/* Header */}
-      <header className="sticky top-0 z-20 glass-panel px-4 py-4 flex justify-between items-center border-b-0 border-white/5 shadow-md">
+      <header className="app-header">
         <div>
-          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-color to-accent-color">
-            Schedule
-          </h1>
-          <p className="text-sm text-text-secondary font-medium">
-            {format(new Date(), 'EEEE, MMMM do')}
-          </p>
+          <h1 className="app-title">Schedule</h1>
+          <p className="app-date">{format(new Date(), 'EEEE, MMMM do')}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="header-actions">
           <button 
-            onClick={() => setShowUploadModal(true)}
-            className="p-2 rounded-full hover:bg-bg-surface-elevated transition-colors text-text-secondary hover:text-text-primary"
-            aria-label="Upload Timetable"
-          >
-            <Upload size={20} />
-          </button>
-          <button 
-            className="p-2 rounded-full hover:bg-bg-surface-elevated transition-colors text-text-secondary hover:text-text-primary"
+            onClick={() => setShowSettingsModal(true)}
+            className="icon-btn"
             aria-label="Settings"
           >
             <Settings size={20} />
@@ -56,23 +41,28 @@ function AppContent() {
         </div>
       </header>
 
-      {/* Main Timeline */}
-      <main className="max-w-md mx-auto w-full relative">
-        <Timeline onEventClick={handleEditEvent} />
+      {/* Main Bento Grid */}
+      <main className="bento-container">
+        <div className="bento-box bento-timeline-area">
+          <Timeline onEventClick={handleEditEvent} />
+        </div>
+        
+        <MajorEvents onEventClick={handleEditEvent} />
+        
+        <EventEditor 
+          eventToEdit={eventToEdit} 
+          onClearSelection={handleCloseModal} 
+        />
       </main>
-
-      {/* Floating Action Button */}
-      <button 
-        onClick={handleOpenAdd}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary-color text-white shadow-glow flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-30"
-        aria-label="Add task"
-      >
-        <Plus size={24} />
-      </button>
 
       {/* Modals */}
       {showUploadModal && <UploadModal onClose={() => setShowUploadModal(false)} />}
-      {showAddModal && <AddEditModal onClose={handleCloseModal} eventToEdit={eventToEdit} />}
+      {showSettingsModal && (
+        <SettingsModal 
+          onClose={() => setShowSettingsModal(false)} 
+          onOpenUpload={() => setShowUploadModal(true)} 
+        />
+      )}
     </div>
   );
 }
@@ -86,5 +76,6 @@ function App() {
 }
 
 export default App;
+
 
 

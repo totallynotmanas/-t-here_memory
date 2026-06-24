@@ -56,39 +56,42 @@ export const generateSchedule = (items: ExtractedItem[], courseCodes: string[]):
   // 1. Find Day Y-coordinates
   const dayCoords: { day: DayOfWeek; y: number }[] = [];
   for (const item of items) {
-    if (DAYS.includes(item.text as DayOfWeek)) {
-      dayCoords.push({ day: item.text as DayOfWeek, y: item.y });
+    const text = item.text.trim();
+    if (DAYS.includes(text as DayOfWeek)) {
+      dayCoords.push({ day: text as DayOfWeek, y: item.y });
     }
   }
   
-  // Sort days from top to bottom (highest Y to lowest Y in PDF)
-  dayCoords.sort((a, b) => b.y - a.y);
-
   // 2. Find Timeslot X-coordinates
-  // We'll look for "Slot 1", "Slot 2", etc., or "8.00 am" to anchor X positions
-  const slotCoords: { slotId: number; x: number }[] = [];
+  // We look for time patterns like "8.00", "09.40", "11.35" to find column headers
+  const slotXValues: number[] = [];
+  const timeRegex = /\d{1,2}[\.:]\d{2}\s*(am|pm)?/i;
   for (const item of items) {
-    const slotMatch = item.text.match(/Slot\s*(\d+)/i);
-    if (slotMatch) {
-      const id = parseInt(slotMatch[1], 10);
-      slotCoords.push({ slotId: id, x: item.x });
-    }
-  }
-  
-  // Sort slots from left to right
-  slotCoords.sort((a, b) => a.x - b.x);
-  
-  // Deduplicate slots (sometimes they appear multiple times)
-  const uniqueSlots = new Map<number, number>();
-  for (const sc of slotCoords) {
-    if (!uniqueSlots.has(sc.slotId)) {
-      uniqueSlots.set(sc.slotId, sc.x);
+    if (timeRegex.test(item.text)) {
+      slotXValues.push(item.x);
     }
   }
 
-  // 3. Find target courses
+  // Cluster X values that are close to each other
+  slotXValues.sort((a, b) => a - b);
+  const clusteredX: number[] = [];
+  for (const x of slotXValues) {
+    if (clusteredX.length === 0 || x - clusteredX[clusteredX.length - 1] > 20) {
+      clusteredX.push(x);
+    }
+  }
+
+  // Map clustered X coordinates to our predefined TIME_SLOTS
+  // Usually there are ~11-12 slots. We map them by index.
+  const slotsMap = new Map<number, typeof TIME_SLOTS[0]>();
+  clusteredX.forEach((x, index) => {
+    if (index < TIME_SLOTS.length) {
+      slotsMap.set(x, TIME_SLOTS[index]);
+    }
+  });
+
   let eventIdCounter = 1;
-  const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+  const colors = ['#d97736', '#a855f7', '#ec4899', '#f59e0b', '#10b981']; // matching our new palette
 
   for (const code of courseCodes) {
     const codeUpper = code.toUpperCase();
@@ -98,49 +101,42 @@ export const generateSchedule = (items: ExtractedItem[], courseCodes: string[]):
     const matchingItems = items.filter(i => i.text.toUpperCase().includes(codeUpper));
     
     for (const match of matchingItems) {
-      // Find which day it belongs to
-      // It belongs to the day whose Y is closest above it (meaning day.y >= match.y in normal coords, 
-      // but in PDF Y=0 is bottom, so Day is visually above, meaning Day Y > Match Y. 
-      // We'll find the Day with minimum positive distance (day.y - match.y).
+      // Find closest Day (minimum Y distance)
       let bestDay: DayOfWeek | null = null;
       let minDistanceY = Infinity;
       
       for (const day of dayCoords) {
-        // PDF Y goes up. A day label is usually at roughly the same Y as the row contents,
-        // or slightly above/below. We'll just find the closest absolute distance.
         const dist = Math.abs(day.y - match.y);
-        if (dist < minDistanceY && dist < 100) { // arbitrary threshold to prevent matching across pages
+        if (dist < minDistanceY) {
           minDistanceY = dist;
           bestDay = day.day;
         }
       }
 
-      // Find which slot it belongs to
-      let bestSlotId: number | null = null;
+      // Find closest Slot (minimum X distance)
+      let bestSlot = null;
       let minDistanceX = Infinity;
       
-      for (const [slotId, slotX] of Array.from(uniqueSlots.entries())) {
-        const dist = Math.abs(slotX - match.x);
-        if (dist < minDistanceX && dist < 150) { // threshold
+      for (const [x, slot] of Array.from(slotsMap.entries())) {
+        const dist = Math.abs(x - match.x);
+        // We only match if it's reasonably close to the column (e.g. within 150 points)
+        if (dist < minDistanceX && dist < 150) { 
           minDistanceX = dist;
-          bestSlotId = slotId;
+          bestSlot = slot;
         }
       }
 
-      if (bestDay && bestSlotId) {
-        const slot = TIME_SLOTS.find(s => s.id === bestSlotId);
-        if (slot) {
-          events.push({
-            id: `imported-${eventIdCounter++}`,
-            title: codeUpper,
-            startTime: slot.start,
-            endTime: slot.end,
-            color: color,
-            dayOfWeek: bestDay,
-            isElective: true,
-            courseCode: codeUpper,
-          });
-        }
+      if (bestDay && bestSlot) {
+        events.push({
+          id: `imported-${eventIdCounter++}`,
+          title: codeUpper,
+          startTime: bestSlot.start,
+          endTime: bestSlot.end,
+          color: color,
+          dayOfWeek: bestDay,
+          isClass: true,
+          courseCode: codeUpper,
+        });
       }
     }
   }
