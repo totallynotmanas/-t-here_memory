@@ -5,9 +5,9 @@ import { useStore } from '../lib/store';
 import { ScheduleEvent } from '../lib/types';
 import { Clock, MapPin, MoreVertical } from 'lucide-react';
 
-const TIMELINE_START_HOUR = 8;
-const TIMELINE_END_HOUR = 20;
-const MINUTE_HEIGHT = 1.5; // pixels per minute
+const TIMELINE_START_HOUR = 7;
+const TIMELINE_END_HOUR = 22;
+const MINUTE_HEIGHT = 3; // pixels per minute
 
 interface TimelineProps {
   onEventClick: (event: ScheduleEvent) => void;
@@ -19,47 +19,62 @@ const getPixelsFromMidnight = (timeStr: string) => {
   return (hours * 60 + minutes) * MINUTE_HEIGHT;
 };
 
-const ScheduleBlock = ({ event, onClick }: { event: ScheduleEvent, onClick: (e: ScheduleEvent) => void }) => {
-  const top = getPixelsFromMidnight(event.startTime) - (TIMELINE_START_HOUR * 60 * MINUTE_HEIGHT);
+const ScheduleBlock = ({ event, onClick, topMargin }: { event: ScheduleEvent, onClick: (e: ScheduleEvent) => void, topMargin: number }) => {
   const duration = differenceInMinutes(
     parse(event.endTime, 'HH:mm', new Date()),
     parse(event.startTime, 'HH:mm', new Date())
   );
-  const height = duration * MINUTE_HEIGHT;
+  const height = Math.max(duration * MINUTE_HEIGHT, 40); // Ensure minimum pill height
 
   return (
     <motion.div
       onClick={() => onClick(event)}
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      style={{ top: `${top}px`, height: `${height}px` }}
-      className="schedule-block"
+      style={{ height: `${height}px`, marginTop: `${topMargin}px` }}
+      className="timeline-block-wrapper"
     >
-      <div 
-        className="schedule-block-color-bar" 
-        style={{ backgroundColor: event.color }} 
-      />
-      <div className="schedule-block-content">
-        <div className="schedule-block-header">
-          <h3 className="schedule-block-title">{event.title}</h3>
-          <button className="schedule-block-more">
-            <MoreVertical size={16} />
-          </button>
+      {/* Left: Start Time */}
+      <div className="timeline-time-left">
+        {format(parse(event.startTime, 'HH:mm', new Date()), 'hh:mm a')}
+      </div>
+      
+      {/* Middle: Pill */}
+      <div className="timeline-pill-container">
+        <div 
+          className="timeline-pill"
+          style={{ backgroundColor: event.color }}
+        >
+          <Clock size={16} color="#ffffff" strokeWidth={2.5} />
         </div>
-        
-        <div className="schedule-block-details">
-          <span className="schedule-block-detail-item">
-            <Clock size={12} />
-            {event.startTime} - {event.endTime}
-          </span>
+      </div>
+
+      {/* Right: Details */}
+      <div className="timeline-content-right">
+        <div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '0.25rem' }}>
+            {format(parse(event.startTime, 'HH:mm', new Date()), 'hh:mm a')} - {format(parse(event.endTime, 'HH:mm', new Date()), 'hh:mm a')} ({duration}m)
+          </div>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+            {event.title}
+          </h3>
           {event.location && (
-            <span className="schedule-block-detail-item">
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
               <MapPin size={12} />
               {event.location}
-            </span>
+            </div>
           )}
         </div>
+        
+        {/* Hollow Circle */}
+        <div style={{ 
+          width: '24px', 
+          height: '24px', 
+          borderRadius: '50%', 
+          border: `2px solid ${event.color}`,
+          flexShrink: 0
+        }} />
       </div>
     </motion.div>
   );
@@ -67,58 +82,51 @@ const ScheduleBlock = ({ event, onClick }: { event: ScheduleEvent, onClick: (e: 
 
 export const Timeline = ({ onEventClick, selectedDate }: TimelineProps) => {
   const { events } = useStore();
-  const [currentTimePixels, setCurrentTimePixels] = useState(0);
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const pixels = ((now.getHours() * 60) + now.getMinutes()) * MINUTE_HEIGHT;
-      setCurrentTimePixels(pixels - (TIMELINE_START_HOUR * 60 * MINUTE_HEIGHT));
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   const selectedDayName = format(selectedDate, 'EEEE');
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
-  const isToday = format(new Date(), 'yyyy-MM-dd') === selectedDateStr;
   
   const selectedEvents = events.filter(e => 
     e.dayOfWeek === selectedDayName || e.date === selectedDateStr
   );
 
-  const hours = Array.from({ length: TIMELINE_END_HOUR - TIMELINE_START_HOUR + 1 }, (_, i) => i + TIMELINE_START_HOUR);
+  const sortedEvents = [...selectedEvents].sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   return (
     <div className="timeline-container">
-      <div className="timeline-line" />
-      
-      {hours.map(hour => (
-        <div key={hour} className="time-row" style={{ height: `${60 * MINUTE_HEIGHT}px` }}>
-          <span className="time-label">
-            {format(new Date().setHours(hour, 0, 0, 0), 'h aa')}
-          </span>
-          <div className="time-divider" />
-        </div>
-      ))}
+      <div className="events-container" style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+        <div className="timeline-line" />
+        
+        {sortedEvents.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-tertiary)', zIndex: 1 }}>
+            No events scheduled for this day.
+          </div>
+        ) : (
+          sortedEvents.map((event, index) => {
+            let topMargin = 0;
+            if (index > 0) {
+              const prevEvent = sortedEvents[index - 1];
+              const gapMinutes = differenceInMinutes(
+                parse(event.startTime, 'HH:mm', new Date()),
+                parse(prevEvent.endTime, 'HH:mm', new Date())
+              );
+              if (gapMinutes > 0) {
+                topMargin = gapMinutes * MINUTE_HEIGHT;
+              } else {
+                topMargin = 16; // Minimum gap for overlapping events
+              }
+            }
 
-      {/* Current Time Indicator */}
-      {isToday && currentTimePixels > 0 && currentTimePixels < (TIMELINE_END_HOUR - TIMELINE_START_HOUR) * 60 * MINUTE_HEIGHT && (
-        <div className="current-time-indicator" style={{ top: `${currentTimePixels}px` }}>
-          <div className="current-time-dot" />
-          <div className="current-time-line" />
-        </div>
-      )}
-
-      {/* Events */}
-      <div className="events-layer">
-        <div className="events-container">
-          {selectedEvents.map(event => (
-            <ScheduleBlock key={event.id} event={event} onClick={onEventClick} />
-          ))}
-        </div>
+            return (
+              <ScheduleBlock 
+                key={event.id} 
+                event={event} 
+                onClick={onEventClick} 
+                topMargin={topMargin}
+              />
+            );
+          })
+        )}
       </div>
     </div>
   );
