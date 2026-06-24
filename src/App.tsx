@@ -5,14 +5,16 @@ import { UploadModal } from './components/UploadModal';
 import { EventEditor } from './components/EventEditor';
 import { MajorEvents } from './components/MajorEvents';
 import { SettingsModal } from './components/SettingsModal';
+import { CalendarPanel } from './components/CalendarPanel';
 import { ScheduleEvent } from './lib/types';
-import { Plus, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { format } from 'date-fns';
 
 function AppContent() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<ScheduleEvent | undefined>();
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const handleEditEvent = (event: ScheduleEvent) => {
     setEventToEdit(event);
@@ -28,7 +30,7 @@ function AppContent() {
       <header className="app-header">
         <div>
           <h1 className="app-title">Schedule</h1>
-          <p className="app-date">{format(new Date(), 'EEEE, MMMM do')}</p>
+          <p className="app-date">{format(selectedDate, 'EEEE, MMMM do')}</p>
         </div>
         <div className="header-actions">
           <button 
@@ -44,8 +46,13 @@ function AppContent() {
       {/* Main Bento Grid */}
       <main className="bento-container">
         <div className="bento-box bento-timeline-area">
-          <Timeline onEventClick={handleEditEvent} />
+          <Timeline onEventClick={handleEditEvent} selectedDate={selectedDate} />
         </div>
+        
+        <CalendarPanel 
+          selectedDate={selectedDate} 
+          onSelectDate={setSelectedDate} 
+        />
         
         <MajorEvents onEventClick={handleEditEvent} />
         
