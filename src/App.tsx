@@ -42,10 +42,10 @@ function AppContent() {
         <div>
           <h1 className="app-title" style={{ fontSize: '1.25rem', fontWeight: 600 }}>
             {format(selectedDate, 'EEEE, MMMM do')}
-            <span style={{ color: 'var(--text-tertiary)', marginLeft: '8px', fontWeight: 400 }}>
-              • {format(currentTime, 'hh:mm a')}
-            </span>
           </h1>
+          <div style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', fontWeight: 400, marginTop: '0.25rem' }}>
+            {format(currentTime, 'hh:mm a')}
+          </div>
         </div>
         <div className="header-actions">
           <button 

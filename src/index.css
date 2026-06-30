@@ -1,29 +1,42 @@
 :root {
-  --bg-color: #161210;
-  --bg-color-rgb: 22, 18, 16;
-  --bg-surface: #221c18;
-  --bg-surface-elevated: #2d2521;
-  --text-primary: #fcf9f7;
-  --text-secondary: #a39b97;
-  --text-tertiary: #756e6b;
-  --primary-color: #d97736;
-  --primary-color-hover: #e88c4d;
-  --accent-color: #a855f7;
-  --accent-color-hover: #9333ea;
+  /* Core Palette */
+  --color-navy: #2E3138;
+  --color-slate: #6C6F7D;
+  --color-taupe: #856A5D;
+  --color-choco: #60463B;
+  --color-lavender: #CCC9E7;
+
+  /* Functional Mapping */
+  --bg-color: var(--color-navy);
+  --bg-surface: rgba(108, 111, 125, 0.12);
+  --bg-surface-elevated: rgba(108, 111, 125, 0.25);
+  --bg-surface-solid: #363942;
+  
+  --text-primary: var(--color-lavender);
+  --text-secondary: rgba(204, 201, 231, 0.65);
+  --text-tertiary: rgba(204, 201, 231, 0.4);
+  
+  --primary-color: var(--color-taupe);
+  --primary-color-hover: var(--color-lavender);
+  --accent-color: var(--color-choco);
+  
+  --border-light: rgba(204, 201, 231, 0.1);
+  --border-medium: rgba(204, 201, 231, 0.2);
+
   --danger-color: #ef4444;
   --success-color: #10b981;
   --warning-color: #f59e0b;
   
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
   --radius-full: 9999px;
   
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
-  --shadow-glow: 0 0 15px 0 rgba(217, 119, 54, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 20px rgba(133, 106, 93, 0.3);
   
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color-scheme: dark;
@@ -36,7 +49,8 @@
 }
 
 body {
-  background-color: var(--bg-color);
+  background: radial-gradient(circle at top right, #393d46, var(--color-navy) 40%, #25272d 100%);
+  background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -64,7 +78,6 @@ input, textarea, select {
 /* Base App Layout */
 .app-container {
   min-height: 100vh;
-  background-color: var(--bg-color);
   color: var(--text-primary);
   padding-bottom: 6rem;
 }
@@ -73,46 +86,43 @@ input, textarea, select {
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 1rem;
+  padding: 2rem 2rem 1rem 2rem;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  background: rgba(var(--bg-color-rgb), 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: var(--shadow-md);
+  align-items: flex-start;
+  background: transparent;
 }
 
 .app-title {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: var(--primary-color);
-}
-
-.app-date {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .header-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .icon-btn {
-  padding: 0.5rem;
+  padding: 0.6rem;
   border-radius: var(--radius-full);
-  color: var(--text-secondary);
-  transition: all 0.2s;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .icon-btn:hover {
-  background-color: var(--bg-surface-elevated);
-  color: var(--text-primary);
+  background: var(--bg-surface-elevated);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border-medium);
 }
 
 .main-content {
@@ -122,8 +132,6 @@ input, textarea, select {
   position: relative;
 }
 
-
-
 /* Bento Box Layout */
 .bento-container {
   display: grid;
@@ -132,20 +140,25 @@ input, textarea, select {
   gap: 1.5rem;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 1.5rem;
-  min-height: calc(100vh - 80px);
+  padding: 0 2rem 2rem 2rem;
+  min-height: calc(100vh - 100px);
 }
 
 .bento-box {
-  background: rgba(var(--bg-color-rgb), 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bg-surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.bento-box:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-medium);
 }
 
 .bento-timeline-area {
@@ -213,12 +226,12 @@ input, textarea, select {
   top: 0;
   bottom: 0;
   width: 2px;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--border-light);
   z-index: 0;
 }
 
 .timeline-block-wrapper {
-  position: absolute;
+  position: relative;
   left: 0;
   right: 0;
   display: flex;
@@ -312,12 +325,12 @@ input, textarea, select {
 }
 
 .modal-content {
-  background-color: var(--bg-surface);
+  background-color: var(--bg-surface-solid);
   width: 100%;
   max-width: 28rem;
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-light);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -326,11 +339,11 @@ input, textarea, select {
 
 .modal-header {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-light);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: rgba(var(--bg-color-rgb), 0.5);
+  background-color: var(--bg-surface);
 }
 
 .modal-body {
@@ -355,8 +368,8 @@ input, textarea, select {
 
 .form-input {
   width: 100%;
-  background-color: var(--bg-color);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--bg-surface-solid);
+  border: 1px solid var(--border-medium);
   border-radius: var(--radius-md);
   padding: 0.5rem 1rem;
   color: var(--text-primary);
@@ -446,7 +459,7 @@ input, textarea, select {
 /* Upload Dropzone */
 .upload-dropzone {
   position: relative;
-  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border: 2px dashed var(--border-medium);
   border-radius: var(--radius-lg);
   padding: 2rem;
   display: flex;

@@ -126,30 +126,43 @@ export const Timeline = ({ onEventClick, selectedDate }: TimelineProps) => {
             No events scheduled for this day.
           </div>
         ) : (
-          sortedEvents.map((event, index) => {
-            let topMargin = 0;
-            if (index > 0) {
-              const prevEvent = sortedEvents[index - 1];
-              const gapMinutes = differenceInMinutes(
-                parse(event.startTime, 'HH:mm', new Date()),
-                parse(prevEvent.endTime, 'HH:mm', new Date())
-              );
-              if (gapMinutes > 0) {
-                topMargin = gapMinutes * MINUTE_HEIGHT;
+          (() => {
+            const elements = [];
+            sortedEvents.forEach((event, index) => {
+              let topMargin = 16;
+              if (index > 0) {
+                const prevEvent = sortedEvents[index - 1];
+                const gapMinutes = differenceInMinutes(
+                  parse(event.startTime, 'HH:mm', new Date()),
+                  parse(prevEvent.endTime, 'HH:mm', new Date())
+                );
+                if (gapMinutes > 0) {
+                  elements.push(
+                    <div key={`gap-${index}`} style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 0', marginLeft: '96px', position: 'relative', zIndex: 1 }}>
+                      <div style={{ padding: '0.25rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '999px', fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 500, border: '1px solid rgba(255,255,255,0.05)' }}>
+                        Free ({gapMinutes}m)
+                      </div>
+                    </div>
+                  );
+                  topMargin = 0; // Reset margin since the Free block provides spacing
+                } else {
+                  topMargin = 16; // Minimum gap for overlapping events
+                }
               } else {
-                topMargin = 16; // Minimum gap for overlapping events
+                topMargin = 0; // First element has no top margin
               }
-            }
 
-            return (
-              <ScheduleBlock 
-                key={event.id} 
-                event={event} 
-                onClick={onEventClick} 
-                topMargin={topMargin}
-              />
-            );
-          })
+              elements.push(
+                <ScheduleBlock 
+                  key={event.id} 
+                  event={event} 
+                  onClick={onEventClick} 
+                  topMargin={topMargin}
+                />
+              );
+            });
+            return elements;
+          })()
         )}
       </div>
     </div>
