@@ -11,6 +11,7 @@ export interface ScheduleEvent {
   isClass?: boolean;
   courseCode?: string;
   location?: string;
+  isDone?: boolean;
 }
 
 export interface ElectivePreference {

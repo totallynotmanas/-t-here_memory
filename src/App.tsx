@@ -7,21 +7,24 @@ import { MajorEvents } from './components/MajorEvents';
 import { SettingsModal } from './components/SettingsModal';
 import { CalendarPanel } from './components/CalendarPanel';
 import { ScheduleEvent } from './lib/types';
-import { Settings } from 'lucide-react';
+import { Settings, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 function AppContent() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showEditorModal, setShowEditorModal] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<ScheduleEvent | undefined>();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const handleEditEvent = (event: ScheduleEvent) => {
     setEventToEdit(event);
+    setShowEditorModal(true);
   };
 
   const handleCloseModal = () => {
     setEventToEdit(undefined);
+    setShowEditorModal(false);
   };
 
   return (
@@ -55,12 +58,18 @@ function AppContent() {
         />
         
         <MajorEvents onEventClick={handleEditEvent} />
-        
-        <EventEditor 
-          eventToEdit={eventToEdit} 
-          onClearSelection={handleCloseModal} 
-        />
       </main>
+
+      <button 
+        className="fab-button"
+        onClick={() => {
+          setEventToEdit(undefined);
+          setShowEditorModal(true);
+        }}
+        aria-label="Add new event"
+      >
+        <Plus size={24} />
+      </button>
 
       {/* Modals */}
       {showUploadModal && <UploadModal onClose={() => setShowUploadModal(false)} />}
@@ -68,6 +77,12 @@ function AppContent() {
         <SettingsModal 
           onClose={() => setShowSettingsModal(false)} 
           onOpenUpload={() => setShowUploadModal(true)} 
+        />
+      )}
+      {showEditorModal && (
+        <EventEditor 
+          eventToEdit={eventToEdit} 
+          onClearSelection={handleCloseModal} 
         />
       )}
     </div>

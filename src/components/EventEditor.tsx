@@ -77,17 +77,16 @@ export const EventEditor = ({ eventToEdit, onClearSelection }: EventEditorProps)
   };
 
   return (
-    <div className="bento-box bento-editor-area" style={{ padding: '1.5rem', overflowY: 'auto' }}>
-      <div className="modal-header" style={{ padding: '0 0 1rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'transparent' }}>
-        <h2 className="app-title" style={{ fontSize: '1.125rem' }}>{eventToEdit ? 'Edit Event' : 'Add New Event'}</h2>
-        {eventToEdit && (
-          <button onClick={onClearSelection} className="icon-btn" aria-label="Cancel edit">
+    <div className="modal-overlay" onClick={onClearSelection}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="app-title" style={{ fontSize: '1.125rem' }}>{eventToEdit ? 'Edit Event' : 'Add New Event'}</h2>
+          <button onClick={onClearSelection} className="icon-btn" aria-label="Close">
             <X size={20} />
           </button>
-        )}
-      </div>
-      
-      <div className="modal-body" style={{ padding: '1.5rem 0 0 0' }}>
+        </div>
+        
+        <div className="modal-body">
         <div className="form-group">
           <label className="form-label">Title</label>
           <input 
@@ -158,7 +157,7 @@ export const EventEditor = ({ eventToEdit, onClearSelection }: EventEditorProps)
           </div>
         </div>
         
-        <div className="modal-actions" style={{ marginTop: 'auto', paddingTop: '1.5rem' }}>
+        <div className="modal-actions">
           {eventToEdit && (
             <button 
               onClick={handleDelete}
@@ -176,6 +175,7 @@ export const EventEditor = ({ eventToEdit, onClearSelection }: EventEditorProps)
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 };

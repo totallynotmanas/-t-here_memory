@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { format, parse, differenceInMinutes } from 'date-fns';
 import { useStore } from '../lib/store';
 import { ScheduleEvent } from '../lib/types';
-import { Clock, MapPin, MoreVertical } from 'lucide-react';
+import { Clock, MapPin, MoreVertical, Check } from 'lucide-react';
 
 const TIMELINE_START_HOUR = 7;
 const TIMELINE_END_HOUR = 22;
@@ -20,11 +20,17 @@ const getPixelsFromMidnight = (timeStr: string) => {
 };
 
 const ScheduleBlock = ({ event, onClick, topMargin }: { event: ScheduleEvent, onClick: (e: ScheduleEvent) => void, topMargin: number }) => {
+  const { updateEvent } = useStore();
   const duration = differenceInMinutes(
     parse(event.endTime, 'HH:mm', new Date()),
     parse(event.startTime, 'HH:mm', new Date())
   );
   const height = Math.max(duration * MINUTE_HEIGHT, 40); // Ensure minimum pill height
+
+  const handleToggleDone = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    updateEvent(event.id, { isDone: !event.isDone });
+  };
 
   return (
     <motion.div
@@ -33,7 +39,7 @@ const ScheduleBlock = ({ event, onClick, topMargin }: { event: ScheduleEvent, on
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       style={{ height: `${height}px`, marginTop: `${topMargin}px` }}
-      className="timeline-block-wrapper"
+      className={`timeline-block-wrapper ${event.isDone ? 'event-done' : ''}`}
     >
       {/* Left: Start Time */}
       <div className="timeline-time-left">
@@ -56,7 +62,14 @@ const ScheduleBlock = ({ event, onClick, topMargin }: { event: ScheduleEvent, on
           <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '0.25rem' }}>
             {format(parse(event.startTime, 'HH:mm', new Date()), 'hh:mm a')} - {format(parse(event.endTime, 'HH:mm', new Date()), 'hh:mm a')} ({duration}m)
           </div>
-          <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+          <h3 style={{ 
+            fontSize: '1.125rem', 
+            fontWeight: 600, 
+            color: 'var(--text-primary)', 
+            margin: 0,
+            textDecoration: event.isDone ? 'line-through' : 'none',
+            opacity: event.isDone ? 0.6 : 1
+          }}>
             {event.title}
           </h3>
           {event.location && (
@@ -67,14 +80,25 @@ const ScheduleBlock = ({ event, onClick, topMargin }: { event: ScheduleEvent, on
           )}
         </div>
         
-        {/* Hollow Circle */}
-        <div style={{ 
-          width: '24px', 
-          height: '24px', 
-          borderRadius: '50%', 
-          border: `2px solid ${event.color}`,
-          flexShrink: 0
-        }} />
+        {/* Toggle Circle */}
+        <div 
+          onClick={handleToggleDone}
+          style={{ 
+            width: '24px', 
+            height: '24px', 
+            borderRadius: '50%', 
+            border: event.isDone ? 'none' : `2px solid ${event.color}`,
+            backgroundColor: event.isDone ? event.color : 'transparent',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          {event.isDone && <Check size={14} color="#fff" strokeWidth={3} />}
+        </div>
       </div>
     </motion.div>
   );
