@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ScheduleEvent, ElectivePreference } from './types';
+import { supabase } from './supabase';
 
 interface StoreContextType {
   events: ScheduleEvent[];
@@ -14,37 +15,66 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
-  const [events, setEventsState] = useState<ScheduleEvent[]>(() => {
-    const saved = localStorage.getItem('schedule_events');
-    return saved ? JSON.parse(saved) : [];
-  });
-
+  const [events, setEventsState] = useState<ScheduleEvent[]>([]);
   const [electives, setElectivesState] = useState<ElectivePreference[]>(() => {
     const saved = localStorage.getItem('schedule_electives');
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Fetch events from Supabase on mount
   useEffect(() => {
-    localStorage.setItem('schedule_events', JSON.stringify(events));
-  }, [events]);
+    const fetchEvents = async () => {
+      const { data, error } = await supabase.from('events').select('*');
+      if (error) {
+        console.error('Error fetching events:', error);
+      } else if (data) {
+        setEventsState(data as ScheduleEvent[]);
+      }
+    };
+    fetchEvents();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('schedule_electives', JSON.stringify(electives));
   }, [electives]);
 
-  const addEvent = (event: ScheduleEvent) => {
+  const addEvent = async (event: ScheduleEvent) => {
+    // Optimistic UI update
     setEventsState(prev => [...prev, event]);
+    
+    // Database update
+    const { error } = await supabase.from('events').insert(event);
+    if (error) console.error('Error adding event:', error);
   };
 
-  const updateEvent = (id: string, updated: Partial<ScheduleEvent>) => {
+  const updateEvent = async (id: string, updated: Partial<ScheduleEvent>) => {
+    // Optimistic UI update
     setEventsState(prev => prev.map(e => e.id === id ? { ...e, ...updated } : e));
+    
+    // Database update
+    const { error } = await supabase.from('events').update(updated).eq('id', id);
+    if (error) console.error('Error updating event:', error);
   };
 
-  const deleteEvent = (id: string) => {
+  const deleteEvent = async (id: string) => {
+    // Optimistic UI update
     setEventsState(prev => prev.filter(e => e.id !== id));
+    
+    // Database update
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    if (error) console.error('Error deleting event:', error);
   };
 
-  const setEvents = (newEvents: ScheduleEvent[]) => {
+  const setEvents = async (newEvents: ScheduleEvent[]) => {
+    // Overwrite all events (e.g. from PDF import)
+    // Clear existing
+    await supabase.from('events').delete().neq('id', 'dummy'); 
+    
+    // Insert new
+    if (newEvents.length > 0) {
+      await supabase.from('events').insert(newEvents);
+    }
+    
     setEventsState(newEvents);
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StoreProvider } from './lib/store';
 import { Timeline } from './components/Timeline';
 import { UploadModal } from './components/UploadModal';
@@ -16,6 +16,14 @@ function AppContent() {
   const [showEditorModal, setShowEditorModal] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<ScheduleEvent | undefined>();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
 
   const handleEditEvent = (event: ScheduleEvent) => {
     setEventToEdit(event);
@@ -32,10 +40,24 @@ function AppContent() {
       {/* Header */}
       <header className="app-header">
         <div>
-          <h1 className="app-title">Schedule</h1>
-          <p className="app-date">{format(selectedDate, 'EEEE, MMMM do')}</p>
+          <h1 className="app-title" style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+            {format(selectedDate, 'EEEE, MMMM do')}
+            <span style={{ color: 'var(--text-tertiary)', marginLeft: '8px', fontWeight: 400 }}>
+              • {format(currentTime, 'hh:mm a')}
+            </span>
+          </h1>
         </div>
         <div className="header-actions">
+          <button 
+            className="icon-btn"
+            onClick={() => {
+              setEventToEdit(undefined);
+              setShowEditorModal(true);
+            }}
+            aria-label="Add new event"
+          >
+            <Plus size={20} />
+          </button>
           <button 
             onClick={() => setShowSettingsModal(true)}
             className="icon-btn"
@@ -59,17 +81,6 @@ function AppContent() {
         
         <MajorEvents onEventClick={handleEditEvent} />
       </main>
-
-      <button 
-        className="fab-button"
-        onClick={() => {
-          setEventToEdit(undefined);
-          setShowEditorModal(true);
-        }}
-        aria-label="Add new event"
-      >
-        <Plus size={24} />
-      </button>
 
       {/* Modals */}
       {showUploadModal && <UploadModal onClose={() => setShowUploadModal(false)} />}
