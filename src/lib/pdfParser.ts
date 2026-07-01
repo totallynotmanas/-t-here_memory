@@ -9,6 +9,7 @@ export interface ExtractedItem {
   text: string;
   x: number;
   y: number;
+  page: number;
 }
 
 export const extractTextItems = async (file: File): Promise<ExtractedItem[]> => {
@@ -25,7 +26,7 @@ export const extractTextItems = async (file: File): Promise<ExtractedItem[]> => 
         // item.transform is [scaleX, skewY, skewX, scaleY, translateX, translateY]
         const x = item.transform[4];
         const y = item.transform[5]; // Note: in PDF, y=0 is at the bottom.
-        items.push({ text: item.str.trim(), x, y });
+        items.push({ text: item.str.trim(), x, y, page: i });
       }
     }
   }
@@ -91,35 +92,30 @@ export const generateSchedule = (items: ExtractedItem[], courseCodes: string[]):
   });
 
   const findElectiveMapping = (codeUpper: string): string | null => {
-    // Find course code in the sub-tables (usually lower on page, i.e. Y < 500)
-    const codeMatches = items.filter(i => i.text.toUpperCase().includes(codeUpper) && i.y < 500);
-    if (codeMatches.length === 0) return null;
-    
-    // Take the first match in the sub-table
-    const match = codeMatches[0];
-    
-    // Find all elective headings (usually Y < 550)
-    const headings = items.filter(i => {
-      if (i.y > 550) return false; 
-      return i.text.match(/(PE|OE)\s*-\s*([IXV]+|\d+)|Professional Elective\s*([IXV]+)/i);
+    // Sort items in reading order: page ascending, Y descending, X ascending
+    const sortedItems = [...items].sort((a, b) => {
+      if (a.page !== b.page) return a.page - b.page;
+      // Group roughly by lines (within 5 pixels)
+      if (Math.abs(b.y - a.y) > 5) {
+        return b.y - a.y;
+      }
+      return a.x - b.x;
     });
-    
-    // Find the heading that is ABOVE the course (higher Y) with the minimum distance
-    let bestHeading = null;
-    let minDistance = Infinity;
-    
-    for (const h of headings) {
-      if (h.y > match.y) {
-        const dist = h.y - match.y;
-        if (dist < minDistance) {
-          minDistance = dist;
-          bestHeading = h.text;
-        }
+
+    // Find the LAST occurrence of the course code in the reading order.
+    // This ensures we find it in the sub-tables (which are at the end of the document).
+    let lastCodeIndex = -1;
+    for (let i = 0; i < sortedItems.length; i++) {
+      if (sortedItems[i].text.toUpperCase().includes(codeUpper)) {
+        lastCodeIndex = i;
       }
     }
-    
-    if (bestHeading) {
-      const matchGroup = bestHeading.match(/(PE|OE)\s*-\s*([IXV]+|\d+)|Professional Elective\s*([IXV]+)/i);
+
+    if (lastCodeIndex === -1) return null;
+
+    // Scan backwards from this course code to find the nearest elective heading
+    for (let i = lastCodeIndex - 1; i >= 0; i--) {
+      const matchGroup = sortedItems[i].text.match(/(PE|OE)\s*-\s*([IXV]+|\d+)|Professional Elective\s*([IXV]+)/i);
       if (matchGroup) {
         // Normalize to PE-IV format
         if (matchGroup[3]) {
@@ -129,6 +125,7 @@ export const generateSchedule = (items: ExtractedItem[], courseCodes: string[]):
         }
       }
     }
+    
     return null;
   };
 
