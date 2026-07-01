@@ -90,6 +90,22 @@ export const generateSchedule = (items: ExtractedItem[], courseCodes: string[]):
     }
   });
 
+  const findElectiveMapping = (codeUpper: string): string | null => {
+    const electiveRegex = /(PE|OE)-([IXV]+|\d+)/i;
+    const codeMatches = items.filter(i => i.text.toUpperCase().includes(codeUpper));
+    
+    for (const match of codeMatches) {
+      const sameLineItems = items.filter(i => Math.abs(i.y - match.y) < 5);
+      for (const item of sameLineItems) {
+        const regexMatch = item.text.match(electiveRegex);
+        if (regexMatch) {
+          return regexMatch[0].toUpperCase();
+        }
+      }
+    }
+    return null;
+  };
+
   let eventIdCounter = 1;
   const colors = ['#d97736', '#a855f7', '#ec4899', '#f59e0b', '#10b981']; // matching our new palette
 
@@ -97,8 +113,16 @@ export const generateSchedule = (items: ExtractedItem[], courseCodes: string[]):
     const codeUpper = code.toUpperCase();
     const color = colors[eventIdCounter % colors.length];
     
-    // Find all items matching this code
-    const matchingItems = items.filter(i => i.text.toUpperCase().includes(codeUpper));
+    // Check if this course maps to an elective alias like PE-IV
+    const electiveAlias = findElectiveMapping(codeUpper);
+    
+    // Find all items matching this code OR its elective alias
+    const matchingItems = items.filter(i => {
+      const textUpper = i.text.toUpperCase();
+      if (textUpper.includes(codeUpper)) return true;
+      if (electiveAlias && textUpper.includes(electiveAlias)) return true;
+      return false;
+    });
     
     for (const match of matchingItems) {
       // Find closest Day (minimum Y distance)
@@ -111,6 +135,12 @@ export const generateSchedule = (items: ExtractedItem[], courseCodes: string[]):
           minDistanceY = dist;
           bestDay = day.day;
         }
+      }
+
+      // If the match is too far vertically from the main calendar days, 
+      // it's likely a sub-table reference. Ignore it.
+      if (minDistanceY > 150) {
+        continue;
       }
 
       // Find closest Slot (minimum X distance)
