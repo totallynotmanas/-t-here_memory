@@ -91,15 +91,41 @@ export const generateSchedule = (items: ExtractedItem[], courseCodes: string[]):
   });
 
   const findElectiveMapping = (codeUpper: string): string | null => {
-    const electiveRegex = /(PE|OE)-([IXV]+|\d+)/i;
-    const codeMatches = items.filter(i => i.text.toUpperCase().includes(codeUpper));
+    // Find course code in the sub-tables (usually lower on page, i.e. Y < 500)
+    const codeMatches = items.filter(i => i.text.toUpperCase().includes(codeUpper) && i.y < 500);
+    if (codeMatches.length === 0) return null;
     
-    for (const match of codeMatches) {
-      const sameLineItems = items.filter(i => Math.abs(i.y - match.y) < 5);
-      for (const item of sameLineItems) {
-        const regexMatch = item.text.match(electiveRegex);
-        if (regexMatch) {
-          return regexMatch[0].toUpperCase();
+    // Take the first match in the sub-table
+    const match = codeMatches[0];
+    
+    // Find all elective headings (usually Y < 550)
+    const headings = items.filter(i => {
+      if (i.y > 550) return false; 
+      return i.text.match(/(PE|OE)\s*-\s*([IXV]+|\d+)|Professional Elective\s*([IXV]+)/i);
+    });
+    
+    // Find the heading that is ABOVE the course (higher Y) with the minimum distance
+    let bestHeading = null;
+    let minDistance = Infinity;
+    
+    for (const h of headings) {
+      if (h.y > match.y) {
+        const dist = h.y - match.y;
+        if (dist < minDistance) {
+          minDistance = dist;
+          bestHeading = h.text;
+        }
+      }
+    }
+    
+    if (bestHeading) {
+      const matchGroup = bestHeading.match(/(PE|OE)\s*-\s*([IXV]+|\d+)|Professional Elective\s*([IXV]+)/i);
+      if (matchGroup) {
+        // Normalize to PE-IV format
+        if (matchGroup[3]) {
+          return `PE-${matchGroup[3].toUpperCase()}`;
+        } else {
+          return `${matchGroup[1].toUpperCase()}-${matchGroup[2].toUpperCase()}`;
         }
       }
     }
