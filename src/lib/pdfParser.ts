@@ -68,9 +68,11 @@ export const findElectiveMapping = (items: ExtractedItem[], codeUpper: string): 
   if (lastCodeIndex === -1) return null;
 
   for (let i = lastCodeIndex - 1; i >= 0; i--) {
-    const matchGroup = sortedItems[i].text.match(/(PE|OE)\s*-\s*([IXV]+|\d+)|Professional Elective\s*([IXV]+)/i);
+    const matchGroup = sortedItems[i].text.match(/(PE|OE)\s*-\s*([IXV]+|\d+)|Professional Elective\s*([IXV]+)|Free\s*Elective/i);
     if (matchGroup) {
-      if (matchGroup[3]) {
+      if (matchGroup[0].toLowerCase().includes('free')) {
+        return 'FREEELECTIVE';
+      } else if (matchGroup[3]) {
         return `PE-${matchGroup[3].toUpperCase()}`;
       } else {
         return `${matchGroup[1].toUpperCase()}-${matchGroup[2].toUpperCase()}`;

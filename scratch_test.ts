@@ -16,23 +16,41 @@ async function test() {
     }
   }
 
-  const slotXValues: number[] = [];
-  const timeRegex = /\d{1,2}[\.:]\d{2}\s*(am|pm)?/i;
-  for (const item of items) {
-    if (timeRegex.test(item.text)) {
-      slotXValues.push(item.x);
+  const sortedItems = [...items].sort((a, b) => {
+    if (a.page !== b.page) return a.page - b.page;
+    if (Math.abs(b.y - a.y) > 5) {
+      return b.y - a.y;
     }
-  }
+    return a.x - b.x;
+  });
 
-  slotXValues.sort((a, b) => a - b);
-  const clusteredX: number[] = [];
-  for (const x of slotXValues) {
-    if (clusteredX.length === 0 || x - clusteredX[clusteredX.length - 1] > 20) {
-      clusteredX.push(x);
+  const findElectiveMapping = (codeUpper: string): string | null => {
+    let lastCodeIndex = -1;
+    for (let i = 0; i < sortedItems.length; i++) {
+      if (sortedItems[i].text.toUpperCase().includes(codeUpper)) {
+        lastCodeIndex = i;
+      }
     }
-  }
-  
-  console.log("Clustered X count:", clusteredX.length);
-  console.log("Clustered X values:", clusteredX);
+    if (lastCodeIndex === -1) return null;
+
+    for (let i = lastCodeIndex - 1; i >= 0; i--) {
+      const matchGroup = sortedItems[i].text.match(/(PE|OE)\s*-\s*([IXV]+|\d+)|Professional Elective\s*([IXV]+)|Free\s*Elective/i);
+      if (matchGroup) {
+        if (matchGroup[0].toLowerCase().includes('free')) {
+          return 'FREEELECTIVE';
+        } else if (matchGroup[3]) {
+          return `PE-${matchGroup[3].toUpperCase()}`;
+        } else {
+          return `${matchGroup[1].toUpperCase()}-${matchGroup[2].toUpperCase()}`;
+        }
+      }
+    }
+    return null;
+  };
+
+  // Find a free elective course from the PDF to test with. Let's look for what is under Free Elective.
+  const freeMatches = sortedItems.filter(i => i.text.toLowerCase().includes('free elective'));
+  console.log("Free elective headings found:");
+  freeMatches.forEach(f => console.log(`  Page ${f.page}, Y: ${f.y} - ${f.text}`));
 }
 test().catch(console.error);
