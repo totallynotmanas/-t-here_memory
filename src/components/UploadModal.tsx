@@ -90,7 +90,7 @@ export const UploadModal = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div className="modal-content" style={{ maxWidth: '64rem' }}>
         <div className="modal-header">
           <h2 className="app-title" style={{ fontSize: '1.125rem' }}>Import Timetable</h2>
           <button onClick={onClose} className="icon-btn">

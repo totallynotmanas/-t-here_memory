@@ -141,9 +141,12 @@ export const generateSchedule = (items: ExtractedItem[], courseCodes: string[]):
     
     // Find all items matching this code OR its elective alias
     const matchingItems = items.filter(i => {
-      const textUpper = i.text.toUpperCase();
-      if (textUpper.includes(codeUpper)) return true;
-      if (electiveAlias && textUpper.includes(electiveAlias)) return true;
+      const textNormalized = i.text.toUpperCase().replace(/\s+/g, '');
+      const codeNormalized = codeUpper.replace(/\s+/g, '');
+      const aliasNormalized = electiveAlias ? electiveAlias.replace(/\s+/g, '') : null;
+      
+      if (textNormalized.includes(codeNormalized)) return true;
+      if (aliasNormalized && textNormalized.includes(aliasNormalized)) return true;
       return false;
     });
     
