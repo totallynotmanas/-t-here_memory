@@ -127,7 +127,7 @@ export const Timeline = ({ onEventClick, selectedDate }: TimelineProps) => {
           </div>
         ) : (
           (() => {
-            const elements = [];
+            const elements: React.ReactNode[] = [];
             sortedEvents.forEach((event, index) => {
               let topMargin = 16;
               if (index > 0) {
